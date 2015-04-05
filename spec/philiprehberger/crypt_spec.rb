@@ -26,11 +26,11 @@ RSpec.describe Philiprehberger::Crypt do
       expect(encrypted1).not_to eq(encrypted2)
     end
 
-    it "handles empty strings" do
-      encrypted = described_class.encrypt("", key: key)
+    it 'handles short strings' do
+      encrypted = described_class.encrypt('a', key: key)
       decrypted = described_class.decrypt(encrypted, key: key)
 
-      expect(decrypted).to eq("")
+      expect(decrypted).to eq('a')
     end
 
     it "handles binary data" do
