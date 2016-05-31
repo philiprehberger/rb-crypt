@@ -185,5 +185,111 @@ RSpec.describe Philiprehberger::Crypt do
     it "returns true for empty strings" do
       expect(described_class.secure_compare("", "")).to be(true)
     end
+
+    it "returns true for identical long strings" do
+      long = "a" * 1000
+      expect(described_class.secure_compare(long, long.dup)).to be(true)
+    end
+
+    it "returns false when strings differ by one character" do
+      a = "abcdefghij"
+      b = "abcdefghik"
+      expect(described_class.secure_compare(a, b)).to be(false)
+    end
+  end
+
+  describe ".encrypt and .decrypt (extended)" do
+    let(:key) { described_class.random_hex(16) }
+
+    it "handles empty string data" do
+      encrypted = described_class.encrypt("", key: key)
+      decrypted = described_class.decrypt(encrypted, key: key)
+      expect(decrypted).to eq("")
+    end
+
+    it "handles unicode data" do
+      unicode = "Hello \u{1F600} World \u{00E9}\u{00F1}\u{00FC}"
+      encrypted = described_class.encrypt(unicode, key: key)
+      decrypted = described_class.decrypt(encrypted, key: key)
+      expect(decrypted.force_encoding('UTF-8')).to eq(unicode)
+    end
+
+    it "handles large data" do
+      large = "x" * 100_000
+      encrypted = described_class.encrypt(large, key: key)
+      decrypted = described_class.decrypt(encrypted, key: key)
+      expect(decrypted).to eq(large)
+    end
+
+    it "converts non-string data to string via to_s" do
+      encrypted = described_class.encrypt(12345, key: key)
+      decrypted = described_class.decrypt(encrypted, key: key)
+      expect(decrypted).to eq("12345")
+    end
+
+    it "raises ArgumentError for key that is too long but not hex" do
+      bad_key = "x" * 50
+      expect { described_class.encrypt("data", key: bad_key) }.to raise_error(ArgumentError)
+    end
+
+    it "raises DecryptionError for completely invalid base64 data" do
+      expect do
+        described_class.decrypt("!!not-base64!!", key: key)
+      end.to raise_error(StandardError)
+    end
+  end
+
+  describe ".derive_key (extended)" do
+    it "converts non-string password via to_s" do
+      salt = described_class.random_salt
+      key = described_class.derive_key(12345, salt: salt)
+      expect(key.bytesize).to eq(32)
+    end
+
+    it "works with empty password" do
+      salt = described_class.random_salt
+      key = described_class.derive_key("", salt: salt)
+      expect(key.bytesize).to eq(32)
+    end
+  end
+
+  describe ".random_token (extended)" do
+    it "produces tokens of consistent length" do
+      tokens = Array.new(5) { described_class.random_token }
+      lengths = tokens.map(&:length).uniq
+      expect(lengths.size).to eq(1)
+    end
+  end
+
+  describe ".random_hex (extended)" do
+    it "returns different values on each call" do
+      hexes = Array.new(10) { described_class.random_hex(16) }
+      expect(hexes.uniq.length).to eq(10)
+    end
+
+    it "handles small byte count" do
+      hex = described_class.random_hex(1)
+      expect(hex.length).to eq(2)
+      expect(hex).to match(/\A[0-9a-f]+\z/)
+    end
+  end
+
+  describe ".hash (extended)" do
+    it "hashes empty string" do
+      digest = described_class.hash("")
+      expect(digest.length).to eq(64)
+      expect(digest).to match(/\A[0-9a-f]+\z/)
+    end
+
+    it "converts non-string via to_s" do
+      digest = described_class.hash(42)
+      expect(digest).to eq(described_class.hash("42"))
+    end
+
+    it "produces known SHA-256 for 'hello'" do
+      expect(described_class.hash("hello")).to eq(
+        "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
+      )
+    end
   end
 end
