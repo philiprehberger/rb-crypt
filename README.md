@@ -54,11 +54,46 @@ Philiprehberger::Crypt.random_token   # => URL-safe Base64 token
 Philiprehberger::Crypt.random_hex(16) # => 32-character hex string
 ```
 
+### Key Rotation
+
+```ruby
+old_key = Philiprehberger::Crypt.random_hex(16)
+new_key = Philiprehberger::Crypt.random_hex(16)
+
+encrypted = Philiprehberger::Crypt.encrypt("secret", key: old_key)
+rotated = Philiprehberger::Crypt.rotate_key(encrypted, old_key: old_key, new_key: new_key)
+
+Philiprehberger::Crypt.decrypt(rotated, key: new_key)
+# => "secret"
+```
+
+### Envelope Encryption
+
+```ruby
+master_key = Philiprehberger::Crypt.random_hex(16)
+
+envelope = Philiprehberger::Crypt.envelope_encrypt("secret data", master_key: master_key)
+# => { encrypted_data: "...", encrypted_key: "..." }
+
+Philiprehberger::Crypt.envelope_decrypt(envelope, master_key: master_key)
+# => "secret data"
+```
+
 ### Hashing
 
 ```ruby
-digest = Philiprehberger::Crypt.hash("data to hash")
+Philiprehberger::Crypt.hash("data to hash")
 # => "b8e6cd431..."  (SHA-256 hex digest)
+
+Philiprehberger::Crypt.hash("data", algorithm: :sha384)
+Philiprehberger::Crypt.hash("data", algorithm: :sha512)
+```
+
+### Random Bytes
+
+```ruby
+Philiprehberger::Crypt.random_bytes(32)
+# => 32-byte binary string
 ```
 
 ### Secure Comparison
@@ -74,11 +109,15 @@ Philiprehberger::Crypt.secure_compare(token_a, token_b)
 |--------|-------------|
 | `.encrypt(data, key:)` | Encrypt data using AES-256-GCM |
 | `.decrypt(data, key:)` | Decrypt data encrypted with `.encrypt` |
+| `.rotate_key(encrypted, old_key:, new_key:)` | Re-encrypt data with a new key |
+| `.envelope_encrypt(data, master_key:)` | Envelope encrypt with random data key |
+| `.envelope_decrypt(envelope, master_key:)` | Decrypt envelope-encrypted data |
 | `.derive_key(password, salt:)` | Derive a 32-byte key using PBKDF2-HMAC-SHA256 |
 | `.random_salt` | Generate a 32-byte cryptographic random salt |
 | `.random_token` | Generate a URL-safe Base64 random token |
 | `.random_hex(n)` | Generate a hex-encoded random string (2*n characters) |
-| `.hash(data)` | Compute SHA-256 hex digest |
+| `.random_bytes(n)` | Generate n cryptographically secure random bytes |
+| `.hash(data, algorithm:)` | Compute hex digest (SHA-256, SHA-384, or SHA-512) |
 | `.secure_compare(a, b)` | Constant-time string comparison |
 | `DecryptionError` | Raised when decryption fails |
 

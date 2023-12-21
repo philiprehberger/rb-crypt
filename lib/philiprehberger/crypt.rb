@@ -104,12 +104,72 @@ module Philiprehberger
       SecureRandom.hex(n)
     end
 
-    # Compute the SHA-256 hash of data.
+    HASH_ALGORITHMS = {
+      sha256: 'SHA256',
+      sha384: 'SHA384',
+      sha512: 'SHA512'
+    }.freeze
+
+    # Compute a cryptographic hash of data.
     #
     # @param data [String] the data to hash
-    # @return [String] the hex-encoded SHA-256 digest
-    def self.hash(data)
-      OpenSSL::Digest.new('SHA256').hexdigest(data.to_s)
+    # @param algorithm [Symbol] the hash algorithm (:sha256, :sha384, or :sha512)
+    # @return [String] the hex-encoded digest
+    # @raise [ArgumentError] if algorithm is unsupported
+    def self.hash(data, algorithm: :sha256)
+      algo = HASH_ALGORITHMS[algorithm]
+      raise ArgumentError, "Unsupported algorithm: #{algorithm}. Use :sha256, :sha384, or :sha512" unless algo
+
+      OpenSSL::Digest.new(algo).hexdigest(data.to_s)
+    end
+
+    # Re-encrypt data with a new key.
+    #
+    # @param encrypted [String] Base64-encoded encrypted data from {.encrypt}
+    # @param old_key [String] the key used for the original encryption
+    # @param new_key [String] the new key to encrypt with
+    # @return [String] Base64-encoded string encrypted with new_key
+    # @raise [DecryptionError] if decryption with old_key fails
+    # @raise [ArgumentError] if key length is invalid
+    def self.rotate_key(encrypted, old_key:, new_key:)
+      plaintext = decrypt(encrypted, key: old_key)
+      encrypt(plaintext, key: new_key)
+    end
+
+    # Encrypt data using envelope encryption.
+    #
+    # Generates a random data key, encrypts data with it, then encrypts the data key with the master key.
+    #
+    # @param data [String] the plaintext data to encrypt
+    # @param master_key [String] a 32-byte master key (raw bytes or hex-encoded)
+    # @return [Hash] with :encrypted_data and :encrypted_key (both Base64 strings)
+    # @raise [ArgumentError] if master_key length is invalid
+    def self.envelope_encrypt(data, master_key:)
+      data_key = SecureRandom.random_bytes(KEY_LENGTH)
+      encrypted_data = encrypt(data, key: data_key)
+      encrypted_key = encrypt(data_key, key: master_key)
+
+      { encrypted_data: encrypted_data, encrypted_key: encrypted_key }
+    end
+
+    # Decrypt data encrypted with {.envelope_encrypt}.
+    #
+    # @param envelope [Hash] with :encrypted_data and :encrypted_key keys
+    # @param master_key [String] the master key used during envelope encryption
+    # @return [String] the decrypted plaintext
+    # @raise [DecryptionError] if decryption fails
+    # @raise [ArgumentError] if master_key length is invalid
+    def self.envelope_decrypt(envelope, master_key:)
+      data_key = decrypt(envelope[:encrypted_key], key: master_key)
+      decrypt(envelope[:encrypted_data], key: data_key)
+    end
+
+    # Generate cryptographically secure random bytes.
+    #
+    # @param n [Integer] the number of random bytes
+    # @return [String] a binary string of n random bytes
+    def self.random_bytes(n)
+      SecureRandom.random_bytes(n)
     end
 
     # Constant-time string comparison to prevent timing attacks.
