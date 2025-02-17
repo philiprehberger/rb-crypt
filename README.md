@@ -96,6 +96,16 @@ Philiprehberger::Crypt.random_bytes(32)
 # => 32-byte binary string
 ```
 
+### HMAC Signing
+
+```ruby
+key = Philiprehberger::Crypt.random_hex(16)
+signature = Philiprehberger::Crypt.hmac("payload", key: key)
+
+Philiprehberger::Crypt.hmac_verify("payload", signature: signature, key: key)
+# => true
+```
+
 ### Secure Comparison
 
 ```ruby
@@ -112,7 +122,9 @@ Philiprehberger::Crypt.secure_compare(token_a, token_b)
 | `.rotate_key(encrypted, old_key:, new_key:)` | Re-encrypt data with a new key |
 | `.envelope_encrypt(data, master_key:)` | Envelope encrypt with random data key |
 | `.envelope_decrypt(envelope, master_key:)` | Decrypt envelope-encrypted data |
-| `.derive_key(password, salt:)` | Derive a 32-byte key using PBKDF2-HMAC-SHA256 |
+| `.derive_key(password, salt:, iterations:)` | Derive a 32-byte key using PBKDF2-HMAC-SHA256 |
+| `.hmac(data, key:, algorithm:)` | Compute hex-encoded HMAC signature |
+| `.hmac_verify(data, signature:, key:, algorithm:)` | Constant-time HMAC verification |
 | `.random_salt` | Generate a 32-byte cryptographic random salt |
 | `.random_token` | Generate a URL-safe Base64 random token |
 | `.random_hex(n)` | Generate a hex-encoded random string (2*n characters) |

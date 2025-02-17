@@ -71,15 +71,45 @@ module Philiprehberger
     #
     # @param password [String] the password to derive from
     # @param salt [String] a random salt (use {.random_salt} to generate)
+    # @param iterations [Integer] number of PBKDF2 iterations (default: 100_000)
     # @return [String] a 32-byte raw key suitable for {.encrypt}/{.decrypt}
-    def self.derive_key(password, salt:)
+    # @raise [ArgumentError] if iterations is less than 1
+    def self.derive_key(password, salt:, iterations: PBKDF2_ITERATIONS)
+      raise ArgumentError, 'iterations must be >= 1' if iterations.to_i < 1
+
       OpenSSL::PKCS5.pbkdf2_hmac(
         password.to_s,
         salt,
-        PBKDF2_ITERATIONS,
+        iterations.to_i,
         KEY_LENGTH,
         OpenSSL::Digest.new('SHA256')
       )
+    end
+
+    # Compute an HMAC signature for data using the given key.
+    #
+    # @param data [String] the data to sign
+    # @param key [String] the HMAC secret key
+    # @param algorithm [Symbol] hash algorithm (:sha256, :sha384, or :sha512)
+    # @return [String] hex-encoded HMAC digest
+    # @raise [ArgumentError] if algorithm is unsupported
+    def self.hmac(data, key:, algorithm: :sha256)
+      algo = HASH_ALGORITHMS[algorithm]
+      raise ArgumentError, "Unsupported algorithm: #{algorithm}. Use :sha256, :sha384, or :sha512" unless algo
+
+      OpenSSL::HMAC.hexdigest(OpenSSL::Digest.new(algo), key.to_s, data.to_s)
+    end
+
+    # Verify an HMAC signature in constant time.
+    #
+    # @param data [String] the original data
+    # @param signature [String] the expected hex-encoded HMAC signature
+    # @param key [String] the HMAC secret key
+    # @param algorithm [Symbol] hash algorithm used to sign
+    # @return [Boolean] true if the signature matches
+    def self.hmac_verify(data, signature:, key:, algorithm: :sha256)
+      expected = hmac(data, key: key, algorithm: algorithm)
+      secure_compare(expected, signature.to_s)
     end
 
     # Generate a cryptographically secure random salt.

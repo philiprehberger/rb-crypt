@@ -329,6 +329,84 @@ RSpec.describe Philiprehberger::Crypt do
     end
   end
 
+  describe '.hmac and .hmac_verify' do
+    let(:key) { described_class.random_hex(16) }
+
+    it 'produces a hex-encoded sha256 HMAC by default' do
+      sig = described_class.hmac('payload', key: key)
+      expect(sig.length).to eq(64)
+      expect(sig).to match(/\A[0-9a-f]+\z/)
+    end
+
+    it 'is deterministic for the same inputs' do
+      expect(described_class.hmac('data', key: key)).to eq(described_class.hmac('data', key: key))
+    end
+
+    it 'produces different signatures for different data' do
+      expect(described_class.hmac('a', key: key)).not_to eq(described_class.hmac('b', key: key))
+    end
+
+    it 'produces different signatures for different keys' do
+      k2 = described_class.random_hex(16)
+      expect(described_class.hmac('data', key: key)).not_to eq(described_class.hmac('data', key: k2))
+    end
+
+    it 'supports sha384 and sha512 algorithms' do
+      expect(described_class.hmac('data', key: key, algorithm: :sha384).length).to eq(96)
+      expect(described_class.hmac('data', key: key, algorithm: :sha512).length).to eq(128)
+    end
+
+    it 'raises ArgumentError for unsupported algorithm' do
+      expect { described_class.hmac('data', key: key, algorithm: :md5) }.to raise_error(ArgumentError)
+    end
+
+    it 'verifies a valid signature' do
+      sig = described_class.hmac('payload', key: key)
+      expect(described_class.hmac_verify('payload', signature: sig, key: key)).to be(true)
+    end
+
+    it 'rejects a tampered signature' do
+      sig = described_class.hmac('payload', key: key)
+      tampered = "#{sig[0..-2]}0"
+      expect(described_class.hmac_verify('payload', signature: tampered, key: key)).to be(false)
+    end
+
+    it 'rejects signature with wrong key' do
+      sig = described_class.hmac('payload', key: key)
+      expect(described_class.hmac_verify('payload', signature: sig, key: described_class.random_hex(16))).to be(false)
+    end
+
+    it 'rejects signature for modified data' do
+      sig = described_class.hmac('payload', key: key)
+      expect(described_class.hmac_verify('payload2', signature: sig, key: key)).to be(false)
+    end
+
+    it 'verifies across algorithms' do
+      sig = described_class.hmac('data', key: key, algorithm: :sha512)
+      expect(described_class.hmac_verify('data', signature: sig, key: key, algorithm: :sha512)).to be(true)
+    end
+  end
+
+  describe '.derive_key with custom iterations' do
+    it 'accepts a custom iteration count' do
+      salt = described_class.random_salt
+      key = described_class.derive_key('pw', salt: salt, iterations: 1_000)
+      expect(key.bytesize).to eq(32)
+    end
+
+    it 'produces different keys for different iteration counts' do
+      salt = described_class.random_salt
+      k1 = described_class.derive_key('pw', salt: salt, iterations: 1_000)
+      k2 = described_class.derive_key('pw', salt: salt, iterations: 2_000)
+      expect(k1).not_to eq(k2)
+    end
+
+    it 'raises ArgumentError for zero iterations' do
+      salt = described_class.random_salt
+      expect { described_class.derive_key('pw', salt: salt, iterations: 0) }.to raise_error(ArgumentError)
+    end
+  end
+
   describe '.derive_key (extended)' do
     it 'converts non-string password via to_s' do
       salt = described_class.random_salt
