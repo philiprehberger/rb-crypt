@@ -367,7 +367,7 @@ RSpec.describe Philiprehberger::Crypt do
 
     it 'rejects a tampered signature' do
       sig = described_class.hmac('payload', key: key)
-      tampered = "#{sig[0..-2]}0"
+      tampered = "#{sig[0..-2]}#{sig[-1] == '0' ? '1' : '0'}"
       expect(described_class.hmac_verify('payload', signature: tampered, key: key)).to be(false)
     end
 
