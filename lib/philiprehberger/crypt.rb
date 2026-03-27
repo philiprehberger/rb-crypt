@@ -33,7 +33,8 @@ module Philiprehberger
       iv = cipher.random_iv
       cipher.auth_data = ""
 
-      ciphertext = cipher.update(data.to_s) + cipher.final
+      plaintext = data.to_s
+      ciphertext = plaintext.empty? ? cipher.final : cipher.update(plaintext) + cipher.final
       auth_tag = cipher.auth_tag(AUTH_TAG_LENGTH)
 
       Base64.strict_encode64(iv + auth_tag + ciphertext)
@@ -61,7 +62,7 @@ module Philiprehberger
       cipher.auth_tag = auth_tag
       cipher.auth_data = ""
 
-      cipher.update(ciphertext) + cipher.final
+      ciphertext.empty? ? cipher.final : cipher.update(ciphertext) + cipher.final
     rescue OpenSSL::Cipher::CipherError => e
       raise DecryptionError, "Decryption failed: #{e.message}"
     end
