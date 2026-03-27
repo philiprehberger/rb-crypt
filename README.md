@@ -3,6 +3,7 @@
 [![Tests](https://github.com/philiprehberger/rb-crypt/actions/workflows/ci.yml/badge.svg)](https://github.com/philiprehberger/rb-crypt/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-crypt.svg)](https://rubygems.org/gems/philiprehberger-crypt)
 [![License](https://img.shields.io/github/license/philiprehberger/rb-crypt)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-GitHub%20Sponsors-ec6cb9)](https://github.com/sponsors/philiprehberger)
 
 High-level encryption with AES-256-GCM, key derivation, and secure random
 
