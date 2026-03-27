@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require "openssl"
-require "securerandom"
-require "base64"
+require 'openssl'
+require 'securerandom'
+require 'base64'
 
 module Philiprehberger
   module Crypt
@@ -11,7 +11,7 @@ module Philiprehberger
     # Raised when decryption fails due to invalid key, tampered data, or corrupt ciphertext.
     class DecryptionError < Error; end
 
-    CIPHER = "aes-256-gcm"
+    CIPHER = 'aes-256-gcm'
     IV_LENGTH = 12
     AUTH_TAG_LENGTH = 16
     KEY_LENGTH = 32
@@ -31,7 +31,7 @@ module Philiprehberger
       cipher.key = raw_key
 
       iv = cipher.random_iv
-      cipher.auth_data = ""
+      cipher.auth_data = ''
 
       plaintext = data.to_s
       ciphertext = plaintext.empty? ? cipher.final : cipher.update(plaintext) + cipher.final
@@ -60,7 +60,7 @@ module Philiprehberger
       cipher.key = raw_key
       cipher.iv = iv
       cipher.auth_tag = auth_tag
-      cipher.auth_data = ""
+      cipher.auth_data = ''
 
       ciphertext.empty? ? cipher.final : cipher.update(ciphertext) + cipher.final
     rescue OpenSSL::Cipher::CipherError => e
@@ -78,7 +78,7 @@ module Philiprehberger
         salt,
         PBKDF2_ITERATIONS,
         KEY_LENGTH,
-        OpenSSL::Digest.new("SHA256")
+        OpenSSL::Digest.new('SHA256')
       )
     end
 
@@ -109,7 +109,7 @@ module Philiprehberger
     # @param data [String] the data to hash
     # @return [String] the hex-encoded SHA-256 digest
     def self.hash(data)
-      OpenSSL::Digest.new("SHA256").hexdigest(data.to_s)
+      OpenSSL::Digest.new('SHA256').hexdigest(data.to_s)
     end
 
     # Constant-time string comparison to prevent timing attacks.
@@ -127,9 +127,7 @@ module Philiprehberger
     def self.normalize_key(key)
       return key if key.bytesize == KEY_LENGTH
 
-      if key.bytesize == KEY_LENGTH * 2 && key.match?(/\A[0-9a-fA-F]+\z/)
-        return [key].pack("H*")
-      end
+      return [key].pack('H*') if key.bytesize == KEY_LENGTH * 2 && key.match?(/\A[0-9a-fA-F]+\z/)
 
       raise ArgumentError, "Key must be #{KEY_LENGTH} bytes (raw) or #{KEY_LENGTH * 2} hex characters"
     end
@@ -137,4 +135,4 @@ module Philiprehberger
   end
 end
 
-require_relative "crypt/version"
+require_relative 'crypt/version'
