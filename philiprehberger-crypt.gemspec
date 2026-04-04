@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
 
   spec.summary = 'High-level encryption with AES-256-GCM, key derivation, and secure random'
   spec.description = 'A high-level encryption toolkit providing AES-256-GCM encryption and decryption, ' \
-                     'PBKDF2 key derivation, secure random generation, SHA-256 hashing, and ' \
-                     "constant-time string comparison using Ruby's built-in OpenSSL."
+                     'key rotation, envelope encryption, PBKDF2 key derivation, secure random generation, ' \
+                     "configurable hashing (SHA-256/384/512), and constant-time string comparison using Ruby's built-in OpenSSL."
   spec.homepage = 'https://philiprehberger.com/open-source-packages/ruby/philiprehberger-crypt'
   spec.license = 'MIT'
 

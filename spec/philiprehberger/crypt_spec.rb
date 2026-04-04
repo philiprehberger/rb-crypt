@@ -154,7 +154,7 @@ RSpec.describe Philiprehberger::Crypt do
   end
 
   describe '.hash' do
-    it 'returns a SHA-256 hex digest' do
+    it 'returns a SHA-256 hex digest by default' do
       digest = described_class.hash('hello')
       expect(digest.length).to eq(64)
       expect(digest).to match(/\A[0-9a-f]+\z/)
@@ -166,6 +166,22 @@ RSpec.describe Philiprehberger::Crypt do
 
     it 'produces different results for different input' do
       expect(described_class.hash('a')).not_to eq(described_class.hash('b'))
+    end
+
+    it 'supports sha384 algorithm' do
+      digest = described_class.hash('hello', algorithm: :sha384)
+      expect(digest.length).to eq(96)
+      expect(digest).to match(/\A[0-9a-f]+\z/)
+    end
+
+    it 'supports sha512 algorithm' do
+      digest = described_class.hash('hello', algorithm: :sha512)
+      expect(digest.length).to eq(128)
+      expect(digest).to match(/\A[0-9a-f]+\z/)
+    end
+
+    it 'raises ArgumentError for unsupported algorithm' do
+      expect { described_class.hash('hello', algorithm: :md5) }.to raise_error(ArgumentError, /Unsupported algorithm/)
     end
   end
 
@@ -195,6 +211,80 @@ RSpec.describe Philiprehberger::Crypt do
       a = 'abcdefghij'
       b = 'abcdefghik'
       expect(described_class.secure_compare(a, b)).to be(false)
+    end
+  end
+
+  describe '.rotate_key' do
+    let(:old_key) { described_class.random_hex(16) }
+    let(:new_key) { described_class.random_hex(16) }
+
+    it 'decrypts with old key and re-encrypts with new key' do
+      plaintext = 'sensitive data'
+      encrypted = described_class.encrypt(plaintext, key: old_key)
+
+      rotated = described_class.rotate_key(encrypted, old_key: old_key, new_key: new_key)
+
+      expect(rotated).not_to eq(encrypted)
+      expect(described_class.decrypt(rotated, key: new_key)).to eq(plaintext)
+    end
+
+    it 'raises DecryptionError with wrong old key' do
+      encrypted = described_class.encrypt('data', key: old_key)
+      wrong_key = described_class.random_hex(16)
+
+      expect do
+        described_class.rotate_key(encrypted, old_key: wrong_key, new_key: new_key)
+      end.to raise_error(Philiprehberger::Crypt::DecryptionError)
+    end
+  end
+
+  describe '.envelope_encrypt and .envelope_decrypt' do
+    let(:master_key) { described_class.random_hex(16) }
+
+    it 'encrypts and decrypts data round-trip' do
+      plaintext = 'envelope secret'
+      envelope = described_class.envelope_encrypt(plaintext, master_key: master_key)
+
+      expect(envelope).to have_key(:encrypted_data)
+      expect(envelope).to have_key(:encrypted_key)
+      expect(envelope[:encrypted_data]).to be_a(String)
+      expect(envelope[:encrypted_key]).to be_a(String)
+
+      decrypted = described_class.envelope_decrypt(envelope, master_key: master_key)
+      expect(decrypted).to eq(plaintext)
+    end
+
+    it 'raises DecryptionError with wrong master key' do
+      envelope = described_class.envelope_encrypt('secret', master_key: master_key)
+      wrong_master = described_class.random_hex(16)
+
+      expect do
+        described_class.envelope_decrypt(envelope, master_key: wrong_master)
+      end.to raise_error(Philiprehberger::Crypt::DecryptionError)
+    end
+
+    it 'uses a unique data key each time' do
+      envelope1 = described_class.envelope_encrypt('same', master_key: master_key)
+      envelope2 = described_class.envelope_encrypt('same', master_key: master_key)
+
+      expect(envelope1[:encrypted_key]).not_to eq(envelope2[:encrypted_key])
+    end
+  end
+
+  describe '.random_bytes' do
+    it 'returns a string of the requested length' do
+      bytes = described_class.random_bytes(16)
+      expect(bytes.bytesize).to eq(16)
+    end
+
+    it 'returns a binary string' do
+      bytes = described_class.random_bytes(32)
+      expect(bytes.encoding).to eq(Encoding::ASCII_8BIT)
+    end
+
+    it 'produces unique values' do
+      values = Array.new(10) { described_class.random_bytes(16) }
+      expect(values.uniq.length).to eq(10)
     end
   end
 
@@ -290,6 +380,22 @@ RSpec.describe Philiprehberger::Crypt do
       expect(described_class.hash('hello')).to eq(
         '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824'
       )
+    end
+
+    it 'produces consistent results for sha384' do
+      expect(described_class.hash('test', algorithm: :sha384)).to eq(described_class.hash('test', algorithm: :sha384))
+    end
+
+    it 'produces consistent results for sha512' do
+      expect(described_class.hash('test', algorithm: :sha512)).to eq(described_class.hash('test', algorithm: :sha512))
+    end
+
+    it 'produces different digests for different algorithms' do
+      sha256 = described_class.hash('hello', algorithm: :sha256)
+      sha384 = described_class.hash('hello', algorithm: :sha384)
+      sha512 = described_class.hash('hello', algorithm: :sha512)
+
+      expect([sha256, sha384, sha512].uniq.length).to eq(3)
     end
   end
 end

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-03
+
+### Added
+- `rotate_key(encrypted, old_key:, new_key:)` for re-encrypting data with a new key
+- `envelope_encrypt(data, master_key:)` and `envelope_decrypt(envelope, master_key:)` for envelope encryption with random data keys
+- `random_bytes(n)` for generating cryptographically secure random bytes
+- `hash(data, algorithm:)` now supports `:sha256`, `:sha384`, and `:sha512` algorithms
+
 ## [0.1.4] - 2026-03-31
 
 ### Added
