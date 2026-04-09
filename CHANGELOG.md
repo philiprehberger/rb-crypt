@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-09
+
+### Added
+- `hmac(data, key:, algorithm:)` for computing HMAC signatures (SHA-256/384/512)
+- `hmac_verify(data, signature:, key:, algorithm:)` for constant-time HMAC verification
+- `derive_key` now accepts an `iterations:` keyword to configure PBKDF2 work factor
+
 ## [0.2.0] - 2026-04-03
 
 ### Added
