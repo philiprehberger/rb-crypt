@@ -153,6 +153,22 @@ module Philiprehberger
       OpenSSL::Digest.new(algo).hexdigest(data.to_s)
     end
 
+    # Compute both a cryptographic hash and HMAC signature of data in one call.
+    #
+    # Delegates to {.hash} and {.hmac} using the same algorithm for both.
+    #
+    # @param data [String] the data to hash and sign
+    # @param key [String] the HMAC secret key
+    # @param algorithm [Symbol] hash algorithm (:sha256, :sha384, or :sha512)
+    # @return [Hash] with :hash (hex digest) and :hmac (hex HMAC signature)
+    # @raise [ArgumentError] if algorithm is unsupported
+    def self.hash_and_hmac(data, key:, algorithm: :sha256)
+      {
+        hash: hash(data, algorithm: algorithm),
+        hmac: hmac(data, key: key, algorithm: algorithm)
+      }
+    end
+
     # Re-encrypt data with a new key.
     #
     # @param encrypted [String] Base64-encoded encrypted data from {.encrypt}
