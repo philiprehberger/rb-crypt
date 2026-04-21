@@ -442,6 +442,41 @@ RSpec.describe Philiprehberger::Crypt do
     end
   end
 
+  describe '.hash_and_hmac' do
+    let(:key) { described_class.random_hex(16) }
+
+    it 'returns a hash with :hash and :hmac keys' do
+      result = described_class.hash_and_hmac('payload', key: key)
+      expect(result).to be_a(Hash)
+      expect(result).to have_key(:hash)
+      expect(result).to have_key(:hmac)
+    end
+
+    it 'hash value matches a direct .hash call' do
+      result = described_class.hash_and_hmac('payload', key: key)
+      expect(result[:hash]).to eq(described_class.hash('payload'))
+    end
+
+    it 'hmac value matches a direct .hmac call' do
+      result = described_class.hash_and_hmac('payload', key: key)
+      expect(result[:hmac]).to eq(described_class.hmac('payload', key: key))
+    end
+
+    it 'defaults to the :sha256 algorithm' do
+      result = described_class.hash_and_hmac('payload', key: key)
+      expect(result[:hash]).to eq(described_class.hash('payload', algorithm: :sha256))
+      expect(result[:hmac]).to eq(described_class.hmac('payload', key: key, algorithm: :sha256))
+    end
+
+    it 'respects algorithm: :sha512' do
+      result = described_class.hash_and_hmac('payload', key: key, algorithm: :sha512)
+      expect(result[:hash]).to eq(described_class.hash('payload', algorithm: :sha512))
+      expect(result[:hmac]).to eq(described_class.hmac('payload', key: key, algorithm: :sha512))
+      expect(result[:hash].length).to eq(128)
+      expect(result[:hmac].length).to eq(128)
+    end
+  end
+
   describe '.hash (extended)' do
     it 'hashes empty string' do
       digest = described_class.hash('')

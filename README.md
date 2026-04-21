@@ -106,6 +106,16 @@ Philiprehberger::Crypt.hmac_verify("payload", signature: signature, key: key)
 # => true
 ```
 
+### Combined Hash and HMAC
+
+```ruby
+key = Philiprehberger::Crypt.random_hex(16)
+result = Philiprehberger::Crypt.hash_and_hmac('payload', key: key)
+# => { hash: '...', hmac: '...' }
+
+result = Philiprehberger::Crypt.hash_and_hmac('payload', key: key, algorithm: :sha512)
+```
+
 ### Secure Comparison
 
 ```ruby
@@ -130,6 +140,7 @@ Philiprehberger::Crypt.secure_compare(token_a, token_b)
 | `.random_hex(n)` | Generate a hex-encoded random string (2*n characters) |
 | `.random_bytes(n)` | Generate n cryptographically secure random bytes |
 | `.hash(data, algorithm:)` | Compute hex digest (SHA-256, SHA-384, or SHA-512) |
+| `.hash_and_hmac(data, key:, algorithm:)` | Compute hash and HMAC signature in one call |
 | `.secure_compare(a, b)` | Constant-time string comparison |
 | `DecryptionError` | Raised when decryption fails |
 
