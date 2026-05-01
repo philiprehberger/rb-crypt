@@ -229,6 +229,19 @@ module Philiprehberger
       OpenSSL.fixed_length_secure_compare(a, b)
     end
 
+    # Produce a short, stable identifier for a key without leaking key material.
+    #
+    # Returns the first 16 hex characters of `SHA-256(normalized_key)`. Stable
+    # across raw and hex representations of the same key. Useful for log lines
+    # ("encrypted with key #{Crypt.fingerprint(k)}"), key-id headers, and key
+    # rotation audits.
+    #
+    # @param key [String] a 32-byte raw or 64-character hex key
+    # @return [String] 16-character lowercase hex identifier
+    def self.fingerprint(key)
+      OpenSSL::Digest::SHA256.hexdigest(normalize_key(key))[0, 16]
+    end
+
     # @api private
     def self.normalize_key(key)
       return key if key.bytesize == KEY_LENGTH

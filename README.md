@@ -116,6 +116,18 @@ result = Philiprehberger::Crypt.hash_and_hmac('payload', key: key)
 result = Philiprehberger::Crypt.hash_and_hmac('payload', key: key, algorithm: :sha512)
 ```
 
+### Key Fingerprint
+
+Generate a short, safe identifier for a key — stable, hex-encoded, and never reveals the key itself.
+Use it in log lines, key-id headers, and key rotation audits.
+
+```ruby
+key = Philiprehberger::Crypt.random_hex(16)
+
+Philiprehberger::Crypt.fingerprint(key)  # => "a3f4b2c1d8e9f0a1"
+# Same value for raw and hex representations of the same key
+```
+
 ### Secure Comparison
 
 ```ruby
@@ -142,6 +154,7 @@ Philiprehberger::Crypt.secure_compare(token_a, token_b)
 | `.hash(data, algorithm:)` | Compute hex digest (SHA-256, SHA-384, or SHA-512) |
 | `.hash_and_hmac(data, key:, algorithm:)` | Compute hash and HMAC signature in one call |
 | `.secure_compare(a, b)` | Constant-time string comparison |
+| `.fingerprint(key)` | 16-char hex identifier (`SHA-256(key)[0,16]`) safe for logs and key-id headers |
 | `DecryptionError` | Raised when decryption fails |
 
 ## Development

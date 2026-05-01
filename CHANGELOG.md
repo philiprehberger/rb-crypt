@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-05-01
+
+### Added
+- `Crypt.fingerprint(key)` — produces a short, stable identifier for a key (first 16 hex chars of `SHA-256(key)`). Stable across raw and hex key representations. Useful for log lines, key-id headers, and key rotation audits without leaking key material.
+
 ## [0.4.0] - 2026-04-15
 
 ### Added

@@ -511,4 +511,30 @@ RSpec.describe Philiprehberger::Crypt do
       expect([sha256, sha384, sha512].uniq.length).to eq(3)
     end
   end
+
+  describe '.fingerprint' do
+    let(:raw_key) { described_class.random_bytes(32) }
+    let(:hex_key) { raw_key.unpack1('H*') }
+
+    it 'is stable for the same key' do
+      expect(described_class.fingerprint(raw_key)).to eq(described_class.fingerprint(raw_key))
+    end
+
+    it 'matches between raw and hex representations of the same key' do
+      expect(described_class.fingerprint(raw_key)).to eq(described_class.fingerprint(hex_key))
+    end
+
+    it 'differs for different keys' do
+      other = described_class.random_bytes(32)
+      expect(described_class.fingerprint(raw_key)).not_to eq(described_class.fingerprint(other))
+    end
+
+    it 'is 16 lowercase hex characters' do
+      expect(described_class.fingerprint(raw_key)).to match(/\A[0-9a-f]{16}\z/)
+    end
+
+    it 'raises for an invalid key length' do
+      expect { described_class.fingerprint('too-short') }.to raise_error(ArgumentError)
+    end
+  end
 end
